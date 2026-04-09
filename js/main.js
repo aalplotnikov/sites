@@ -1,19 +1,21 @@
-/**
- * LUXURY RESORT - Main JavaScript
- */
+// ========================================
+// LUXURY RESORT & SPA - JavaScript
+// ========================================
 
 document.addEventListener('DOMContentLoaded', function() {
-    
     // Loader
     const loader = document.querySelector('.loader');
+    
     window.addEventListener('load', () => {
         setTimeout(() => {
             loader.classList.add('hidden');
-        }, 800);
+            document.body.classList.add('loaded');
+        }, 1500);
     });
 
     // Header scroll effect
-    const header = document.querySelector('.header');
+    const header = document.getElementById('header');
+    
     window.addEventListener('scroll', () => {
         if (window.scrollY > 100) {
             header.classList.add('scrolled');
@@ -23,59 +25,136 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Mobile menu
-    const burgerMenu = document.querySelector('.burger-menu');
+    const burgerBtn = document.querySelector('.burger-btn');
     const mobileMenu = document.querySelector('.mobile-menu');
     const mobileNavLinks = document.querySelectorAll('.mobile-nav-link');
 
-    burgerMenu.addEventListener('click', () => {
+    burgerBtn.addEventListener('click', () => {
+        burgerBtn.classList.toggle('active');
         mobileMenu.classList.toggle('active');
-        burgerMenu.classList.toggle('active');
+        document.body.style.overflow = mobileMenu.classList.contains('active') ? 'hidden' : '';
     });
 
     mobileNavLinks.forEach(link => {
         link.addEventListener('click', () => {
+            burgerBtn.classList.remove('active');
             mobileMenu.classList.remove('active');
-            burgerMenu.classList.remove('active');
+            document.body.style.overflow = '';
         });
     });
 
-    // Hero slider
+    // Hero Slider
     const heroSlides = document.querySelectorAll('.hero-slide');
+    const heroDots = document.querySelectorAll('.hero-dots .dot');
+    const heroPrev = document.querySelector('.hero-arrow.prev');
+    const heroNext = document.querySelector('.hero-arrow.next');
     let currentSlide = 0;
+    let slideInterval;
 
-    function nextSlide() {
-        heroSlides[currentSlide].classList.remove('active');
-        currentSlide = (currentSlide + 1) % heroSlides.length;
-        heroSlides[currentSlide].classList.add('active');
+    function showHeroSlide(index) {
+        heroSlides.forEach(slide => slide.classList.remove('active'));
+        heroDots.forEach(dot => dot.classList.remove('active'));
+        
+        heroSlides[index].classList.add('active');
+        heroDots[index].classList.add('active');
+        currentSlide = index;
     }
 
-    setInterval(nextSlide, 5000);
+    function nextHeroSlide() {
+        const nextIndex = (currentSlide + 1) % heroSlides.length;
+        showHeroSlide(nextIndex);
+    }
 
-    // Reveal on scroll animation
-    const revealElements = document.querySelectorAll('.reveal');
+    function prevHeroSlide() {
+        const prevIndex = (currentSlide - 1 + heroSlides.length) % heroSlides.length;
+        showHeroSlide(prevIndex);
+    }
 
-    function revealOnScroll() {
-        revealElements.forEach(element => {
-            const elementTop = element.getBoundingClientRect().top;
-            const windowHeight = window.innerHeight;
+    function startHeroSlider() {
+        slideInterval = setInterval(nextHeroSlide, 5000);
+    }
 
-            if (elementTop < windowHeight - 100) {
-                element.classList.add('active');
-            }
+    function stopHeroSlider() {
+        clearInterval(slideInterval);
+    }
+
+    heroNext.addEventListener('click', () => {
+        stopHeroSlider();
+        nextHeroSlide();
+        startHeroSlider();
+    });
+
+    heroPrev.addEventListener('click', () => {
+        stopHeroSlider();
+        prevHeroSlide();
+        startHeroSlider();
+    });
+
+    heroDots.forEach((dot, index) => {
+        dot.addEventListener('click', () => {
+            stopHeroSlider();
+            showHeroSlide(index);
+            startHeroSlider();
         });
+    });
+
+    startHeroSlider();
+
+    // Rooms Slider
+    const roomCards = document.querySelectorAll('.room-card');
+    const roomDots = document.querySelectorAll('.slider-dots .dot');
+    const roomPrev = document.querySelector('.slider-arrow.prev');
+    const roomNext = document.querySelector('.slider-arrow.next');
+    let currentRoom = 0;
+
+    function showRoom(index) {
+        roomCards.forEach(card => card.classList.remove('active'));
+        roomDots.forEach(dot => dot.classList.remove('active'));
+        
+        roomCards[index].classList.add('active');
+        roomDots[index].classList.add('active');
+        currentRoom = index;
     }
 
-    window.addEventListener('scroll', revealOnScroll);
-    revealOnScroll(); // Initial check
+    roomNext.addEventListener('click', () => {
+        const nextIndex = (currentRoom + 1) % roomCards.length;
+        showRoom(nextIndex);
+    });
 
-    // Smooth scroll for anchor links
+    roomPrev.addEventListener('click', () => {
+        const prevIndex = (currentRoom - 1 + roomCards.length) % roomCards.length;
+        showRoom(prevIndex);
+    });
+
+    roomDots.forEach((dot, index) => {
+        dot.addEventListener('click', () => {
+            showRoom(index);
+        });
+    });
+
+    // Room thumbnails
+    document.querySelectorAll('.thumb').forEach(thumb => {
+        thumb.addEventListener('click', function() {
+            const parentCard = this.closest('.room-card');
+            const mainImage = parentCard.querySelector('.main-image');
+            mainImage.src = this.src;
+            
+            parentCard.querySelectorAll('.thumb').forEach(t => t.classList.remove('active'));
+            this.classList.add('active');
+        });
+    });
+
+    // Smooth scroll for navigation
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', function(e) {
             e.preventDefault();
-            const target = document.querySelector(this.getAttribute('href'));
-            if (target) {
+            const targetId = this.getAttribute('href');
+            if (targetId === '#') return;
+            
+            const targetElement = document.querySelector(targetId);
+            if (targetElement) {
                 const headerHeight = header.offsetHeight;
-                const targetPosition = target.offsetTop - headerHeight;
+                const targetPosition = targetElement.offsetTop - headerHeight;
                 
                 window.scrollTo({
                     top: targetPosition,
@@ -85,121 +164,132 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Form submission
+    // Active nav link on scroll
+    const sections = document.querySelectorAll('section[id]');
+    const navLinks = document.querySelectorAll('.nav-link');
+
+    function updateActiveNav() {
+        const scrollPosition = window.scrollY + 200;
+        
+        sections.forEach(section => {
+            const sectionTop = section.offsetTop;
+            const sectionHeight = section.offsetHeight;
+            const sectionId = section.getAttribute('id');
+            
+            if (scrollPosition >= sectionTop && scrollPosition < sectionTop + sectionHeight) {
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href') === `#${sectionId}`) {
+                        link.classList.add('active');
+                    }
+                });
+            }
+        });
+    }
+
+    window.addEventListener('scroll', updateActiveNav);
+
+    // Scroll animations
+    const fadeElements = document.querySelectorAll('.section-title, .section-pretitle, .territory-card, .service-item, .feature, .stat-item, .room-card, .invest-stat');
+    
+    const observerOptions = {
+        threshold: 0.1,
+        rootMargin: '0px 0px -50px 0px'
+    };
+
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('visible');
+                observer.unobserve(entry.target);
+            }
+        });
+    }, observerOptions);
+
+    fadeElements.forEach(el => {
+        el.classList.add('fade-in');
+        observer.observe(el);
+    });
+
+    // Form handling
     const bookingForm = document.getElementById('bookingForm');
+    
     if (bookingForm) {
         bookingForm.addEventListener('submit', function(e) {
             e.preventDefault();
             
-            // Get form data
             const formData = new FormData(this);
+            const data = Object.fromEntries(formData);
             
-            // Show success message (in real app, send to server)
-            alert('Спасибо за заявку! Наш менеджер свяжется с вами в ближайшее время.');
+            // Show success message
+            alert('Спасибо за вашу заявку! Наш менеджер свяжется с вами в ближайшее время.');
             
             // Reset form
             this.reset();
         });
     }
 
-    // Parallax effect for territory and beach sections
-    const parallaxSections = document.querySelectorAll('.territory-parallax, .beach-parallax');
+    // Parallax effect for territory section
+    const parallaxBg = document.querySelector('.parallax-bg');
     
-    window.addEventListener('scroll', () => {
-        parallaxSections.forEach(section => {
+    if (parallaxBg) {
+        window.addEventListener('scroll', () => {
             const scrolled = window.pageYOffset;
-            const sectionTop = section.offsetTop;
-            const sectionHeight = section.offsetHeight;
+            const sectionTop = parallaxBg.parentElement.offsetTop;
+            const sectionHeight = parallaxBg.parentElement.offsetHeight;
             
             if (scrolled > sectionTop - window.innerHeight && scrolled < sectionTop + sectionHeight) {
                 const yPos = (scrolled - sectionTop) * 0.3;
-                section.style.backgroundPositionY = `${yPos}px`;
+                parallaxBg.style.transform = `translateY(${yPos}px)`;
             }
         });
-    });
-
-    // Active nav link on scroll
-    const sections = document.querySelectorAll('section[id]');
-    const navLinks = document.querySelectorAll('.nav-link');
-
-    window.addEventListener('scroll', () => {
-        let current = '';
-        
-        sections.forEach(section => {
-            const sectionTop = section.offsetTop;
-            const sectionHeight = section.offsetHeight;
-            
-            if (window.pageYOffset >= sectionTop - 200) {
-                current = section.getAttribute('id');
-            }
-        });
-
-        navLinks.forEach(link => {
-            link.classList.remove('active');
-            if (link.getAttribute('href') === `#${current}`) {
-                link.classList.add('active');
-            }
-        });
-    });
-
-    // Counter animation for location values
-    const locationValues = document.querySelectorAll('.location-value');
-    let counterAnimated = false;
-
-    function animateCounters() {
-        if (counterAnimated) return;
-        
-        const locationSection = document.querySelector('.location-section');
-        const sectionTop = locationSection.offsetTop;
-        const sectionHeight = locationSection.offsetHeight;
-        
-        if (window.pageYOffset >= sectionTop - window.innerHeight + 200 && 
-            window.pageYOffset < sectionTop + sectionHeight) {
-            
-            counterAnimated = true;
-            
-            locationValues.forEach(value => {
-                const text = value.textContent;
-                const number = parseInt(text.replace(/\D/g, ''));
-                const unit = text.replace(/[0-9]/g, '');
-                
-                if (number) {
-                    let current = 0;
-                    const increment = number / 50;
-                    const timer = setInterval(() => {
-                        current += increment;
-                        if (current >= number) {
-                            value.textContent = number + unit;
-                            clearInterval(timer);
-                        } else {
-                            value.textContent = Math.floor(current) + unit;
-                        }
-                    }, 30);
-                }
-            });
-        }
     }
 
-    window.addEventListener('scroll', animateCounters);
-
-    // Invest cards hover effect enhancement
-    const investCards = document.querySelectorAll('.invest-card');
+    // Counter animation for stats
+    const statValues = document.querySelectorAll('.stat-value, .stat-number');
     
-    investCards.forEach(card => {
-        card.addEventListener('mouseenter', function() {
-            investCards.forEach(c => {
-                if (c !== card) {
-                    c.style.opacity = '0.7';
-                }
-            });
+    const counterObserver = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                animateCounter(entry.target);
+                counterObserver.unobserve(entry.target);
+            }
         });
-        
-        card.addEventListener('mouseleave', function() {
-            investCards.forEach(c => {
-                c.style.opacity = '1';
-            });
-        });
-    });
+    }, { threshold: 0.5 });
 
-    console.log('Luxury Resort loaded successfully!');
+    statValues.forEach(stat => counterObserver.observe(stat));
+
+    function animateCounter(element) {
+        const text = element.textContent;
+        const hasPercent = text.includes('%');
+        const hasKm = text.includes('км');
+        const hasMin = text.includes('мин');
+        const hasM = text.includes('м');
+        
+        let number = parseFloat(text.replace(/[^0-9.-]/g, ''));
+        if (isNaN(number)) return;
+        
+        const duration = 2000;
+        const steps = 60;
+        const increment = number / steps;
+        let current = 0;
+        
+        const timer = setInterval(() => {
+            current += increment;
+            if (current >= number) {
+                current = number;
+                clearInterval(timer);
+            }
+            
+            let displayValue = Math.floor(current);
+            if (hasPercent) displayValue += '%';
+            if (hasKm) displayValue += ' км';
+            if (hasMin) displayValue += ' мин';
+            if (hasM) displayValue += ' м';
+            
+            element.textContent = displayValue;
+        }, duration / steps);
+    }
+
+    console.log('Luxury Resort & SPA - Ready');
 });
